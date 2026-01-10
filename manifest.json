@@ -1,0 +1,24 @@
+{
+  "name": "Tic-Tac-Toe Pro",
+  "short_name": "TTT Pro",
+  "description": "Premium Offline Tic-Tac-Toe Game.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/bottts/png?seed=ttt&backgroundColor=0f172a&size=192",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/bottts/png?seed=ttt&backgroundColor=0f172a&size=512",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
