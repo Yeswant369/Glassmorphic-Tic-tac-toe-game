@@ -6,157 +6,122 @@
 <title>Tic-Tac-Toe Pro PWA</title>
 
 <link rel="manifest" href="manifest.json">
-
-<!-- Firebase (CDN – works in APK/PWA) -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<meta id="themeColorMeta" name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/bottts/svg?seed=ttt&backgroundColor=0f172a">
 
 <script src="https://cdn.tailwindcss.com"></script>
 
 <script>
-/* ================= FIREBASE INIT ================= */
-const firebaseConfig = {
-  apiKey: "AIzaSyCY2qB4sbPs_7BIz355cQiQkDDqK-S_z4I",
-  authDomain: "flux-chat-b9cb2.firebaseapp.com",
-  projectId: "flux-chat-b9cb2",
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-/* ================= MULTIPLAYER STATE ================= */
-let isOnline = false;
-let gameId = null;
-let mySymbol = null;
-let unsubscribe = null;
-
-/* ================= EXISTING STATE (UNCHANGED) ================= */
-const boardArr = Array(9).fill(null);
-let currentPlayer = 'X';
-let scores = { X: 0, O: 0, draw: 0 };
-let roundHistory = [];
-let isGameActive = true;
-let isVsCpu = false;
-
-/* ================= DOM (UNCHANGED) ================= */
-const cells = document.querySelectorAll('.cell');
-const statusEl = document.getElementById('status');
-
-/* ================= ONLINE GAME ================= */
-async function startOrJoinOnline() {
-  isOnline = true;
-
-  const snap = await db.collection("ttt-games")
-    .where("players", "<", 2)
-    .limit(1)
-    .get();
-
-  if (snap.empty) {
-    const doc = await db.collection("ttt-games").add({
-      board: Array(9).fill(null),
-      currentPlayer: "X",
-      players: 1,
-      winner: null
-    });
-    gameId = doc.id;
-    mySymbol = "X";
-  } else {
-    const doc = snap.docs[0];
-    gameId = doc.id;
-    mySymbol = "O";
-    await doc.ref.update({ players: 2 });
-  }
-
-  listenOnlineGame();
-}
-
-function listenOnlineGame() {
-  unsubscribe = db.collection("ttt-games").doc(gameId)
-    .onSnapshot(doc => {
-      const data = doc.data();
-      if (!data) return;
-
-      data.board.forEach((v, i) => {
-        boardArr[i] = v;
-        cells[i].innerText = v || '';
-      });
-
-      currentPlayer = data.currentPlayer;
-
-      if (data.winner) {
-        isGameActive = false;
-        statusEl.innerText =
-          data.winner === "Draw" ? "Draw!" : `${data.winner} Wins!`;
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        primary: '#3b82f6',
+        secondary: '#ef4444'
+      },
+      animation: {
+        pop: 'pop 0.3s cubic-bezier(0.175,0.885,0.32,1.275)',
+        'fade-in': 'fadeIn 0.5s ease-out',
+        'zoom-in': 'zoomIn 0.3s ease-out'
+      },
+      keyframes: {
+        pop: {'0%':{transform:'scale(.8)',opacity:0},'100%':{transform:'scale(1)',opacity:1}},
+        fadeIn:{'0%':{opacity:0,transform:'translateY(10px)'},'100%':{opacity:1,transform:'translateY(0)'}},
+        zoomIn:{'0%':{opacity:0,transform:'scale(.9)'},'100%':{opacity:1,transform:'scale(1)'}}
       }
-    });
-}
-
-/* ================= MOVE HANDLER ================= */
-function executeMove(index) {
-  if (isOnline) {
-    if (currentPlayer !== mySymbol) return;
-    boardArr[index] = mySymbol;
-
-    const winner = checkWinner(boardArr);
-
-    db.collection("ttt-games").doc(gameId).update({
-      board: boardArr,
-      currentPlayer: mySymbol === "X" ? "O" : "X",
-      winner
-    });
-    return;
+    }
   }
-
-  /* OFFLINE (YOUR ORIGINAL LOGIC CONTINUES) */
-}
-
-/* ================= WIN CHECK ================= */
-function checkWinner(b) {
-  const wins = [
-    [0,1,2],[3,4,5],[6,7,8],
-    [0,3,6],[1,4,7],[2,5,8],
-    [0,4,8],[2,4,6]
-  ];
-  for (let p of wins) {
-    if (b[p[0]] && b[p[0]] === b[p[1]] && b[p[0]] === b[p[2]])
-      return b[p[0]];
-  }
-  if (!b.includes(null)) return "Draw";
-  return null;
-}
-
-/* ================= EVENTS ================= */
-cells.forEach(c => {
-  c.onclick = () => {
-    const i = c.dataset.index;
-    if (!boardArr[i] && isGameActive) executeMove(i);
-  };
-});
-
-/* PvP = ONLINE */
-pvpBtn.onclick = () => {
-  isVsCpu = false;
-  startOrJoinOnline();
 };
 
-/* vs CPU = OFFLINE */
-pvcBtn.onclick = () => {
-  isVsCpu = true;
-  isOnline = false;
-  if (unsubscribe) unsubscribe();
-};
-
-/* ================= LOAD ================= */
-window.onload = () => {
-  statusEl.innerText = "Select Mode";
-};
+(function(){
+  const t = localStorage.getItem('theme_ttt') || 'dark';
+  if(t==='dark') document.documentElement.classList.add('dark');
+})();
 </script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+body{font-family:'Plus Jakarta Sans',sans-serif;-webkit-tap-highlight-color:transparent}
+html.dark body{background:#020617;color:#f1f5f9}
+html:not(.dark) body{background:#f8fafc;color:#0f172a}
+.glass{backdrop-filter:blur(12px);transition:.3s}
+html.dark .glass{background:rgba(30,41,59,.5);border:1px solid rgba(255,255,255,.08)}
+html:not(.dark) .glass{background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.1)}
+.board-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;font-weight:900}
+.winning-cell{background:#22c55e!important;color:white!important}
+.mode-btn.active{background:#3b82f6!important;color:white!important}
+#themeToggle{position:fixed;top:1.5rem;right:1.5rem;z-index:9999;width:3.5rem;height:3.5rem}
+#resultOverlay.hidden{display:none}
+</style>
 </head>
 
-<!-- BODY & UI BELOW IS 100% YOUR ORIGINAL CODE -->
-<!-- NOTHING CHANGED -->
+<body class="min-h-screen flex flex-col items-center p-4 pt-24">
 
-<body class="min-h-screen flex flex-col items-center justify-start p-4 pt-24 md:pt-12 md:justify-center">
-<!-- 🔒 YOUR ENTIRE UI CODE CONTINUES EXACTLY AS YOU SENT -->
+<button id="themeToggle" class="glass rounded-full flex items-center justify-center shadow-2xl">
+<svg id="sunIcon" class="w-7 h-7 text-amber-400 hidden" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/></svg>
+<svg id="moonIcon" class="w-7 h-7 text-slate-700 hidden" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3"/></svg>
+</button>
+
+<div class="w-full max-w-sm space-y-6">
+<header class="text-center space-y-4">
+<h1 class="text-5xl font-black bg-gradient-to-br from-blue-500 to-indigo-600 bg-clip-text text-transparent">TTT PRO</h1>
+<div class="inline-flex glass p-1.5 rounded-2xl">
+<button id="pvpBtn" class="mode-btn active px-6 py-2 rounded-xl text-xs font-bold">PvP</button>
+<button id="pvcBtn" class="mode-btn px-6 py-2 rounded-xl text-xs font-bold">vs CPU</button>
+</div>
+<div id="status" class="text-slate-500 text-xs font-bold">Waiting for Move...</div>
+</header>
+
+<div id="board" class="board-grid">
+<button class="cell glass rounded-3xl" data-index="0"></button>
+<button class="cell glass rounded-3xl" data-index="1"></button>
+<button class="cell glass rounded-3xl" data-index="2"></button>
+<button class="cell glass rounded-3xl" data-index="3"></button>
+<button class="cell glass rounded-3xl" data-index="4"></button>
+<button class="cell glass rounded-3xl" data-index="5"></button>
+<button class="cell glass rounded-3xl" data-index="6"></button>
+<button class="cell glass rounded-3xl" data-index="7"></button>
+<button class="cell glass rounded-3xl" data-index="8"></button>
+</div>
+</div>
+
+<script>
+const boardArr = Array(9).fill(null);
+let currentPlayer='X',isGameActive=true,isVsCpu=false;
+
+const cells=document.querySelectorAll('.cell');
+const statusEl=document.getElementById('status');
+const pvpBtn=document.getElementById('pvpBtn');
+const pvcBtn=document.getElementById('pvcBtn');
+
+const winPatterns=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+cells.forEach(c=>c.onclick=e=>{
+const i=e.target.dataset.index;
+if(!isGameActive||boardArr[i])return;
+boardArr[i]=currentPlayer;
+e.target.textContent=currentPlayer;
+if(checkWin())return;
+currentPlayer=currentPlayer==='X'?'O':'X';
+statusEl.textContent=`Player ${currentPlayer}'s Turn`;
+});
+
+function checkWin(){
+for(const [a,b,c] of winPatterns){
+if(boardArr[a]&&boardArr[a]===boardArr[b]&&boardArr[a]===boardArr[c]){
+isGameActive=false;
+statusEl.textContent=`Player ${boardArr[a]} Wins`;
+return true;
+}}
+return false;
+}
+
+pvpBtn.onclick=()=>{isVsCpu=false;pvpBtn.classList.add('active');pvcBtn.classList.remove('active');};
+pvcBtn.onclick=()=>{isVsCpu=true;pvcBtn.classList.add('active');pvpBtn.classList.remove('active');};
+</script>
 </body>
 </html>
