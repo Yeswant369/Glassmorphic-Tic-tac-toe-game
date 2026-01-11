@@ -6,10 +6,9 @@
 <title>Tic-Tac-Toe Pro PWA</title>
 
 <link rel="manifest" href="manifest.json">
-<meta id="themeColorMeta" name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/bottts/svg?seed=ttt&backgroundColor=0f172a">
 
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -21,107 +20,157 @@ tailwind.config = {
       colors: {
         primary: '#3b82f6',
         secondary: '#ef4444'
-      },
-      animation: {
-        pop: 'pop 0.3s cubic-bezier(0.175,0.885,0.32,1.275)',
-        'fade-in': 'fadeIn 0.5s ease-out',
-        'zoom-in': 'zoomIn 0.3s ease-out'
-      },
-      keyframes: {
-        pop: {'0%':{transform:'scale(.8)',opacity:0},'100%':{transform:'scale(1)',opacity:1}},
-        fadeIn:{'0%':{opacity:0,transform:'translateY(10px)'},'100%':{opacity:1,transform:'translateY(0)'}},
-        zoomIn:{'0%':{opacity:0,transform:'scale(.9)'},'100%':{opacity:1,transform:'scale(1)'}}
       }
     }
   }
 };
 
-(function(){
-  const t = localStorage.getItem('theme_ttt') || 'dark';
-  if(t==='dark') document.documentElement.classList.add('dark');
+(function () {
+  const savedTheme = localStorage.getItem('theme_ttt') || 'dark';
+  document.documentElement.classList.toggle('dark', savedTheme === 'dark');
 })();
 </script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-body{font-family:'Plus Jakarta Sans',sans-serif;-webkit-tap-highlight-color:transparent}
-html.dark body{background:#020617;color:#f1f5f9}
-html:not(.dark) body{background:#f8fafc;color:#0f172a}
-.glass{backdrop-filter:blur(12px);transition:.3s}
-html.dark .glass{background:rgba(30,41,59,.5);border:1px solid rgba(255,255,255,.08)}
-html:not(.dark) .glass{background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.1)}
-.board-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.cell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;font-weight:900}
-.winning-cell{background:#22c55e!important;color:white!important}
-.mode-btn.active{background:#3b82f6!important;color:white!important}
-#themeToggle{position:fixed;top:1.5rem;right:1.5rem;z-index:9999;width:3.5rem;height:3.5rem}
-#resultOverlay.hidden{display:none}
+
+body { font-family: 'Plus Jakarta Sans', sans-serif; }
+.glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+html.dark .glass {
+  background: rgba(30,41,59,0.5);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+html:not(.dark) .glass {
+  background: rgba(255,255,255,0.8);
+  border: 1px solid rgba(0,0,0,0.1);
+}
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 12px;
+}
+.cell {
+  aspect-ratio: 1/1;
+  font-size: 2.5rem;
+  font-weight: 900;
+}
+.mode-btn.active {
+  background:#3b82f6;
+  color:white;
+}
 </style>
 </head>
 
 <body class="min-h-screen flex flex-col items-center p-4 pt-24">
 
-<button id="themeToggle" class="glass rounded-full flex items-center justify-center shadow-2xl">
-<svg id="sunIcon" class="w-7 h-7 text-amber-400 hidden" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/></svg>
-<svg id="moonIcon" class="w-7 h-7 text-slate-700 hidden" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3"/></svg>
-</button>
+<button id="themeToggle" class="glass rounded-full p-4 fixed top-6 right-6">🌓</button>
 
 <div class="w-full max-w-sm space-y-6">
-<header class="text-center space-y-4">
-<h1 class="text-5xl font-black bg-gradient-to-br from-blue-500 to-indigo-600 bg-clip-text text-transparent">TTT PRO</h1>
-<div class="inline-flex glass p-1.5 rounded-2xl">
-<button id="pvpBtn" class="mode-btn active px-6 py-2 rounded-xl text-xs font-bold">PvP</button>
-<button id="pvcBtn" class="mode-btn px-6 py-2 rounded-xl text-xs font-bold">vs CPU</button>
+
+<h1 class="text-5xl font-black text-center text-primary">TTT PRO</h1>
+
+<div class="flex justify-center glass p-2 rounded-2xl">
+  <button id="pvpBtn" class="mode-btn active px-6 py-2 rounded-xl">PvP</button>
+  <button id="pvcBtn" class="mode-btn px-6 py-2 rounded-xl">vs CPU</button>
 </div>
-<div id="status" class="text-slate-500 text-xs font-bold">Waiting for Move...</div>
-</header>
+
+<div id="status" class="text-center text-sm uppercase tracking-widest text-gray-400">
+Waiting for Player X
+</div>
 
 <div id="board" class="board-grid">
-<button class="cell glass rounded-3xl" data-index="0"></button>
-<button class="cell glass rounded-3xl" data-index="1"></button>
-<button class="cell glass rounded-3xl" data-index="2"></button>
-<button class="cell glass rounded-3xl" data-index="3"></button>
-<button class="cell glass rounded-3xl" data-index="4"></button>
-<button class="cell glass rounded-3xl" data-index="5"></button>
-<button class="cell glass rounded-3xl" data-index="6"></button>
-<button class="cell glass rounded-3xl" data-index="7"></button>
-<button class="cell glass rounded-3xl" data-index="8"></button>
-</div>
+  <button class="cell glass rounded-3xl" data-index="0"></button>
+  <button class="cell glass rounded-3xl" data-index="1"></button>
+  <button class="cell glass rounded-3xl" data-index="2"></button>
+  <button class="cell glass rounded-3xl" data-index="3"></button>
+  <button class="cell glass rounded-3xl" data-index="4"></button>
+  <button class="cell glass rounded-3xl" data-index="5"></button>
+  <button class="cell glass rounded-3xl" data-index="6"></button>
+  <button class="cell glass rounded-3xl" data-index="7"></button>
+  <button class="cell glass rounded-3xl" data-index="8"></button>
 </div>
 
+<button id="resetBtn" class="w-full glass rounded-3xl py-4">Reset</button>
+
+</div>
+
+<!-- ================= FIXED SCRIPT ================= -->
 <script>
-const boardArr = Array(9).fill(null);
-let currentPlayer='X',isGameActive=true,isVsCpu=false;
+document.addEventListener("DOMContentLoaded", () => {
 
-const cells=document.querySelectorAll('.cell');
-const statusEl=document.getElementById('status');
-const pvpBtn=document.getElementById('pvpBtn');
-const pvcBtn=document.getElementById('pvcBtn');
+  const board = Array(9).fill(null);
+  let currentPlayer = 'X';
+  let isGameActive = true;
+  let isVsCpu = false;
 
-const winPatterns=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  const cells = document.querySelectorAll('.cell');
+  const statusEl = document.getElementById('status');
+  const pvpBtn = document.getElementById('pvpBtn');
+  const pvcBtn = document.getElementById('pvcBtn');
+  const resetBtn = document.getElementById('resetBtn');
 
-cells.forEach(c=>c.onclick=e=>{
-const i=e.target.dataset.index;
-if(!isGameActive||boardArr[i])return;
-boardArr[i]=currentPlayer;
-e.target.textContent=currentPlayer;
-if(checkWin())return;
-currentPlayer=currentPlayer==='X'?'O':'X';
-statusEl.textContent=`Player ${currentPlayer}'s Turn`;
+  const wins = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
+  function checkWin() {
+    return wins.some(p =>
+      board[p[0]] &&
+      board[p[0]] === board[p[1]] &&
+      board[p[0]] === board[p[2]]
+    );
+  }
+
+  function reset() {
+    board.fill(null);
+    cells.forEach(c => c.textContent = '');
+    currentPlayer = 'X';
+    isGameActive = true;
+    statusEl.textContent = "Waiting for Player X";
+  }
+
+  cells.forEach(cell => {
+    cell.onclick = () => {
+      const i = cell.dataset.index;
+      if (!isGameActive || board[i]) return;
+
+      board[i] = currentPlayer;
+      cell.textContent = currentPlayer;
+
+      if (checkWin()) {
+        statusEl.textContent = `Player ${currentPlayer} Wins`;
+        isGameActive = false;
+        return;
+      }
+
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      statusEl.textContent = `Player ${currentPlayer}'s Turn`;
+    };
+  });
+
+  pvpBtn.onclick = () => {
+    isVsCpu = false;
+    pvpBtn.classList.add('active');
+    pvcBtn.classList.remove('active');
+    reset();
+  };
+
+  pvcBtn.onclick = () => {
+    isVsCpu = true;
+    pvcBtn.classList.add('active');
+    pvpBtn.classList.remove('active');
+    reset();
+  };
+
+  resetBtn.onclick = reset;
+
 });
-
-function checkWin(){
-for(const [a,b,c] of winPatterns){
-if(boardArr[a]&&boardArr[a]===boardArr[b]&&boardArr[a]===boardArr[c]){
-isGameActive=false;
-statusEl.textContent=`Player ${boardArr[a]} Wins`;
-return true;
-}}
-return false;
-}
-
-pvpBtn.onclick=()=>{isVsCpu=false;pvpBtn.classList.add('active');pvcBtn.classList.remove('active');};
-pvcBtn.onclick=()=>{isVsCpu=true;pvcBtn.classList.add('active');pvpBtn.classList.remove('active');};
 </script>
+
 </body>
 </html>
